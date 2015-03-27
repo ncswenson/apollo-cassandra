@@ -11,6 +11,35 @@ var DEFAULT_REPLICATION_FACTOR = 1;
 
 var noop = function(){};
 
+function _classComparator (classOne, classTwo) {
+    if (classOne !== classTwo) {
+        var _refs = [];
+        var isDone = false;
+        var prototype = classOne;
+        while (!isDone) {
+            if (!prototype) {
+                throw('Model must be sub class of the apollo provided base model');
+            }
+            if (prototype instanceof classTwo) {
+                isDone = true;
+            } else {
+                var alreadyFound = false;
+                _refs.forEach(function (r) {
+                    if (r === prototype) {
+                        alreadyFound = true;
+                    }
+                });
+                if (alreadyFound) prototype = null;
+                else {
+                    _refs.push(prototype);
+                    prototype = classOne.prototype;
+                }
+            }
+        }
+    }
+}
+
+
 /**
  * Utilità per cassandra
  * @param {Apollo~Connection} connection configurazione di Apollo
@@ -42,7 +71,15 @@ Apollo.prototype = {
      * @private
      */
     _generate_model : function(properties){
+        this._generate_model_from_model(properties, BaseModel);
+    },
 
+    /**
+     * Generate model from a model
+     * @param properties
+     * @private
+     */
+    _generate_model_from_model : function(properties, model){
         /**
          * Create a new instance for the model
          * @class Model
@@ -51,14 +88,21 @@ Apollo.prototype = {
          * @classdesc Generic model. Use it statically to find documents on Cassandra. Any instance represent a row retrieved or which can be saved on DB
          */
         var Model = function(instance_values){
-           BaseModel.apply(this,Array.prototype.slice.call(arguments));
+            model.apply(this,Array.prototype.slice.call(arguments));
         };
 
-        util.inherits(Model,BaseModel);
+        util.inherits(Model,model);
 
-        for(var i in BaseModel){
-            if(BaseModel.hasOwnProperty(i)){
-               Model[i] = BaseModel[i];
+        for(var i in model){
+            if(model.hasOwnProperty(i)){
+                Model[i] = model[i];
+            }
+        }
+
+        // Extend BaseModel static properties if needed
+        for(var j in BaseModel){
+            if(!Model.hasOwnProperty(j)) {
+                Model[j] = BaseModel[j];
             }
         }
 
@@ -192,17 +236,17 @@ Apollo.prototype = {
         }
     },
 
-
     /**
-     * Create a model based on proposed schema
-     * @param {string}  model_name - Name for the model
-     * @param {object}  model_schema - Schema for the model
-     * @param {Apollo~ModelCreationOptions} options - Options for the creation
-     * @return {Model} Model constructor
+     * Register model
+     *
+     * Adds model based on the schema and model provided
      */
-    add_model : function(model_name, model_schema, options) {
+    add_model_with_model : function(model_name, model_schema, model, options) {
         if(!model_name || typeof(model_name) != "string")
             throw("Si deve specificare un nome per il modello");
+
+        // Check that constructor is sub class of BaseModel
+        _classComparator(model, BaseModel);
 
         options = options || {};
         options.mismatch_behaviour = options.mismatch_behaviour || 'fail';
@@ -223,7 +267,18 @@ Apollo.prototype = {
             connect: this.connect.bind(this)
         };
 
-        return (this._models[model_name] = this._generate_model(base_properties));
+        return (this._models[model_name] = this._generate_model_from_model(base_properties, model));
+    },
+
+    /**
+     * Create a model based on proposed schema
+     * @param {string}  model_name - Name for the model
+     * @param {object}  model_schema - Schema for the model
+     * @param {Apollo~ModelCreationOptions} options - Options for the creation
+     * @return {Model} Model constructor
+     */
+    add_model : function(model_name, model_schema, options) {
+        return this.add_model_with_model(model_name, model_schema, BaseModel, options);
     },
 
     /**
@@ -235,6 +290,12 @@ Apollo.prototype = {
         return this._models[model_name] || null;
     },
 
+    /**
+     * Get base model
+     */
+    get_base_model : function(){
+        return BaseModel;
+    },
 
     /**
      * Chiusura della connessione

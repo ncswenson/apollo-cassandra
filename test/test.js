@@ -1,7 +1,9 @@
 var chai = require('chai');
 var assert = chai.assert;
 var async = require('async');
+var util = require('util');
 var Apollo = require(__dirname +'/../libs/apollo');
+var BaseModel = require(__dirname + '/../libs/base_model');
 
 
 var connection;
@@ -45,7 +47,6 @@ describe('Apollo > ', function(){
             });
         });
     });
-
 
     describe('On Apollo instances > ',function(){
 
@@ -148,6 +149,38 @@ describe('Apollo > ', function(){
             assert.propertyVal(ins,'v1',500);
             assert.notProperty(ins,'v2');
             assert.property(ins,'save');
+        });
+
+        it('sub class model', function(){
+            var SubModel = function () {
+                BaseModel.apply(this, arguments);
+            };
+            util.inherits(SubModel, BaseModel);
+            SubModel.prototype.testFn = function (key) {
+                return this[key];
+            };
+            SubModel.find = function () {
+                return 'static';
+            };
+
+            var TestModel = ap.add_model_with_model("test1", model_test1, SubModel);
+            assert.isFunction(TestModel);
+            assert.property(TestModel,'find');
+            assert.ok(TestModel.find() == 'static');
+            var instance = new TestModel({v1: 1, v2: 2, v3: 3});
+            assert.property(instance, 'testFn');
+            assert.ok(instance.testFn('v1') === 1);
+        });
+
+        it('not sub class model', function(){
+            var SubModel = function () {};
+            SubModel.prototype.testFn = function (key) {
+                return this[key];
+            };
+
+            assert.throws(function() {
+                ap.add_model_with_model("test1", model_test1, SubModel);
+            }, 'Model must be sub class of the apollo provided base model');
         });
 
         it('init works even if not already connected', function(done){

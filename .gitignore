@@ -27,5 +27,6 @@ node_modules
 docs/
 
 .npmrc
+.idea*
 
 test/local_conf.json
