@@ -457,7 +457,7 @@ BaseModel._get_db_value_expression = function(fieldname, fieldvalue){
             if( isNaN( fieldvalue.getTime() ) )
                 throw(build_error('model.save.invalidvalue',fieldvalue,fieldname,fieldtype));
 
-            return ("\'" + fieldvalue.toISOString().replace(/\..+/, '') + "\'");
+            return ("\'" + fieldvalue.toISOString().replace(/\..+/, '') + "Z\'");
         case 'blob':
             return util.format("textAsBlob('%s')",fieldvalue.toString());
         case 'uuid':
