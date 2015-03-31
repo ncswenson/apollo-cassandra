@@ -21,7 +21,7 @@ Apollo is a <a href="http://cassandra.apache.org/" target="_blank">Cassandra</a>
 Include Apollo and start creating your models
 
 ```javascript
-var Apollo = require('apollo-cassandra');
+var apollo = require('apollo-cassandra');
 
 var connection = {
     "hosts": [
@@ -30,8 +30,8 @@ var connection = {
     "keyspace": "my_keyspace"
 };
 
-var apollo = new Apollo(connection);
-apollo.connect(function(err){
+var apolloClient = new apollo.Client(connection);
+apolloClient.connect(function(err){
     if(err) throw err;
     /* do amazing things! */
 })
@@ -39,7 +39,7 @@ apollo.connect(function(err){
 
 ### Connection
 
-`Apollo` constructor takes two arguments: `connection` and `options`. Let's see what they are in depth:
+`apollo.Client` constructor takes two arguments: `connection` and `options`. Let's see what they are in depth:
 
 - `connection` are a set of options for your connection and accept the following parameters:
     
@@ -55,7 +55,7 @@ apollo.connect(function(err){
 Here is a complete example: 
 
 ```javascript
-var apollo = new Apollo(
+var apollo = new apollo.Client(
     {
        hosts: ['1.2.3.4', '12.3.6.5', 'cassandra.me.com:1212'],
        keyspace: 'mykeyspace',

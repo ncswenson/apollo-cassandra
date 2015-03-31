@@ -318,7 +318,9 @@ Apollo.prototype = {
     }
 };
 
-module.exports = Apollo;
+exports.Client = Apollo;
+exports.BaseModel = BaseModel;
+
 
 /**
  * Generic callback with just error parameter.
