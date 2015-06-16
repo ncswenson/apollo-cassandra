@@ -37,6 +37,8 @@ validators.is_uuid = function (obj){
 };
 
 validators.is_inet = function (obj){
+    if (obj.toString) obj = obj.toString();
+    
     if(!check.string(obj))
         return false;
 
